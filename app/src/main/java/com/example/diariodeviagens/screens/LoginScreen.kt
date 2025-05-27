@@ -1,16 +1,26 @@
 package com.example.diariodeviagens.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -19,14 +29,36 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.example.diariodeviagens.R
+import com.example.diariodeviagens.model.User
+import com.example.diariodeviagens.service.RetrofitFactory
 
 @Composable
-fun LoginScreen() {
+fun LoginInput(value: String, onValueChange: (String) -> Unit, label: String) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label, color = Color.White) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.Transparent),
+        textStyle = LocalTextStyle.current.copy(color = Color.White)
+
+    )
+}
+
+@Composable
+fun LoginScreen(navController: NavHostController?) {
+
+    var email = remember { mutableStateOf("") }
+    var senha = remember { mutableStateOf("") }
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Fundo com imagem
+// Fundo com imagem
         Image(
             painter = painterResource(id = R.drawable.telafundo1),
             contentDescription = null,
@@ -34,14 +66,14 @@ fun LoginScreen() {
             modifier = Modifier.fillMaxSize()
         )
 
-        // Overlay escuro
+// Overlay escuro
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0x66000000))
         )
 
-        // Logo no canto superior esquerdo
+// Logo no canto superior esquerdo
         Image(
             painter = painterResource(id = R.drawable.logo),
             contentDescription = "Logo",
@@ -51,7 +83,6 @@ fun LoginScreen() {
                 .align(Alignment.TopStart)
         )
 
-        // Faixa central com fundo marrom translúcido (80%)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -80,10 +111,16 @@ fun LoginScreen() {
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                LoginInput(label = "Email:")
+                LoginInput(
+                    value = email.value, onValueChange = { email.value = it }, label = "Email"
+                )
+
                 Spacer(modifier = Modifier.height(16.dp))
 
-                LoginInput(label = "Senha:")
+                LoginInput(
+                    value = senha.value, onValueChange = { senha.value = it }, label = "Senha"
+                )
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
@@ -98,56 +135,41 @@ fun LoginScreen() {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Box(
+
+                Button(
+                    onClick = {},
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
-                        .background(Color(0xFF3E2723), RoundedCornerShape(30.dp)),
-                    contentAlignment = Alignment.Center
+                        .height(48.dp),
+                    shape = RoundedCornerShape(30.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF3E2723), contentColor = Color.White
+                    )
                 ) {
                     Text(
-                        text = "Login",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
+                        text = "Login", fontWeight = FontWeight.Bold, fontSize = 18.sp
                     )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    buildAnnotatedString {
-                        append("Não tem login? ")
-                        withStyle(SpanStyle(color = Color.White, fontWeight = FontWeight.Bold)) {
-                            append("Cadastre-se")
-                        }
-                    },
-                    fontSize = 14.sp,
-                    color = Color(0xFF3E2723)
-                )
+                TextButton(
+                    onClick = {
+                        navController?.navigate("CadastroScreen")
+                    }, modifier = Modifier.padding(15.dp)
+                ) {
+                    Text(
+                        text = "Cadastre-se", fontSize = 14.sp, color = Color(0xFF3E2723)
+                    )
+                }
             }
         }
     }
 }
 
-
-
+@Preview(showSystemUi = true)
 @Composable
-fun LoginInput(label: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .background(Color(0x33FFFFFF), RoundedCornerShape(8.dp)) // Branco translúcido
-            .padding(start = 20.dp),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Text(text = label, color = Color.White)
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun TelaLoginPreview() {
-    LoginScreen()
+private fun TelaLoginPreview() {
+    val navController = rememberNavController()
+    LoginScreen(navController = navController)
 }
