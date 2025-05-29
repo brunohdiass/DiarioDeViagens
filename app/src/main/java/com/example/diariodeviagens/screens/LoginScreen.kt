@@ -137,7 +137,9 @@ fun LoginScreen(navController: NavHostController?) {
 
 
                 Button(
-                    onClick = {},
+                    onClick = {
+                        navController?.navigate("TelaMyViagens")
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),

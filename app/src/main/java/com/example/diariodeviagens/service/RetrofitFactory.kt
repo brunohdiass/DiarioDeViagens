@@ -5,7 +5,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class RetrofitFactory {
 
-    private val BASE_URL = "http://10.107.144.33:8080/v1/diario-viagem/" //link
+    private val BASE_URL = "http://10.107.144.34:8080/v1/diario-viagem/" //link
 
     private val retrofitFactory = Retrofit
         .Builder()

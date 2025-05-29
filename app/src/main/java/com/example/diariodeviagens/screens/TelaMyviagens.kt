@@ -19,10 +19,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.example.diariodeviagens.R
 
 @Composable
-fun TelaMyViagens() {
+fun TelaMyViagens(navController1: NavHostController?) {
     val searchText = remember { mutableStateOf("") }
 
     Box(
@@ -231,5 +233,6 @@ fun TelaMyViagens() {
 @Preview(showSystemUi = true)
 @Composable
 fun PreviewTelaMyViagens() {
-    TelaMyViagens()
+    val navController = rememberNavController()
+    TelaMyViagens(null)
 }

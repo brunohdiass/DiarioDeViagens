@@ -11,6 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.abordoteste.screen.TelaMyViagens
 import com.example.diariodeviagens.screens.CadastroScreen
 import com.example.diariodeviagens.screens.LoginScreen
 import com.example.diariodeviagens.ui.theme.DiarioDeViagensTheme
@@ -32,6 +33,9 @@ class MainActivity : ComponentActivity() {
 
                     composable("CadastroScreen"){
                         CadastroScreen(navController)
+                    }
+                    composable("TelaMyViagens") {
+                        TelaMyViagens(navController)
                     }
                 }
             }
