@@ -1,4 +1,4 @@
-package com.example.abordoapp.screen
+package com.example.diariodeviagens.screens
 
 import android.graphics.BitmapFactory
 import android.net.Uri

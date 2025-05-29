@@ -16,10 +16,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.abordoapp.R
+import com.example.diariodeviagens.R
 
 @Composable
 fun TelaMyViagens() {
@@ -28,16 +28,15 @@ fun TelaMyViagens() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF2F0F0)) // Fundo com cor f2f0f0
+            .background(Color(0xFFF2F0F0))
     ) {
-        // TOPO (fundo marrom com logo, texto e campo de busca)
+        // TOPO: Área marrom com logo, menu e campo de busca
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(200.dp)
                 .background(Color(0xFFA86523))
         ) {
-            // Logo e menu
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -48,7 +47,7 @@ fun TelaMyViagens() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.logo_app),
+                    painter = painterResource(id = R.drawable.logo),
                     contentDescription = null,
                     modifier = Modifier.size(75.dp)
                 )
@@ -70,7 +69,6 @@ fun TelaMyViagens() {
                     .padding(start = 16.dp, top = 90.dp, end = 16.dp)
             )
 
-            // Campo de busca
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -114,11 +112,10 @@ fun TelaMyViagens() {
                 modifier = Modifier.padding(start = 20.dp, bottom = 8.dp)
             )
 
-            // Linha do tempo + cards
             Column(modifier = Modifier.fillMaxWidth()) {
                 listOf(
                     "Ilha Bela" to R.drawable.ilhabela,
-                    "Campos do Jordão" to R.drawable.ilhabela,
+                    "Campos do Jordão" to R.drawable.ilhabela // Garanta que essa imagem existe!
                 ).forEach { (titulo, imagem) ->
                     Row(
                         verticalAlignment = Alignment.Top,
@@ -129,14 +126,13 @@ fun TelaMyViagens() {
                             imageVector = Icons.Filled.Place,
                             contentDescription = "Localização",
                             modifier = Modifier.size(28.dp),
-                            tint = Color(color = (0xFFA86523))
+                            tint = Color(0xFFA86523)
                         )
 
                         Spacer(modifier = Modifier.width(12.dp))
 
                         Column(
                             modifier = Modifier.widthIn(max = 320.dp)
-
                         ) {
                             Text(
                                 text = titulo,
@@ -178,7 +174,7 @@ fun TelaMyViagens() {
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        // Itens adicionais aqui, se desejar
+                                        // Adicione ações ou botões aqui
                                     }
                                 }
                             }
@@ -188,7 +184,7 @@ fun TelaMyViagens() {
             }
         }
 
-        // Rodapé
+        // RODAPÉ
         Row(
             modifier = Modifier
                 .fillMaxWidth()
