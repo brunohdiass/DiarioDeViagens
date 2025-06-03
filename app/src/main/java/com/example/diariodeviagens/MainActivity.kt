@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.abordoteste.screen.TelaMyViagens
 import com.example.diariodeviagens.screens.CadastroScreen
 import com.example.diariodeviagens.screens.LoginScreen
+import com.example.diariodeviagens.screens.TelaNovaPublicacao
 import com.example.diariodeviagens.ui.theme.DiarioDeViagensTheme
 
 class MainActivity : ComponentActivity() {
@@ -22,26 +23,32 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             DiarioDeViagensTheme {
-                var navController = rememberNavController()
+                val navController = rememberNavController()
                 NavHost(
                     navController = navController,
-                    startDestination = "LoginScreen"
+                    startDestination = "novaviagem" // ← Aqui está o início correto
                 ) {
                     composable("LoginScreen") {
                         LoginScreen(navController)
                     }
 
-                    composable("CadastroScreen"){
+                    composable("CadastroScreen") {
                         CadastroScreen(navController)
                     }
+
                     composable("TelaMyViagens") {
                         TelaMyViagens(navController)
+                    }
+
+                    composable("novaviagem") {
+                        TelaNovaPublicacao(navController)
                     }
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {

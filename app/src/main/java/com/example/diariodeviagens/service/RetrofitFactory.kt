@@ -5,15 +5,26 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class RetrofitFactory {
 
-    private val BASE_URL = "http://10.107.144.34:8080/v1/diario-viagem/" //link
 
-    private val retrofitFactory = Retrofit
-        .Builder()
-        .baseUrl(BASE_URL)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
+
+    // Criar Retrofit uma vez só, quando a classe for instanciada
+    private val retrofitFactory: Retrofit by lazy {
+        Retrofit.Builder()
+            .baseUrl("http://10.107.144.26:8080/v1/diario-viagem/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
 
     fun getUserService(): UserService {
         return retrofitFactory.create(UserService::class.java)
     }
+
+    fun getViagemService(): ViagemService {
+        return retrofitFactory.create(ViagemService::class.java)
+    }
+
+    fun getCategoriaService(): CategoriaService {
+        return retrofitFactory.create(CategoriaService::class.java)
+    }
+
 }
