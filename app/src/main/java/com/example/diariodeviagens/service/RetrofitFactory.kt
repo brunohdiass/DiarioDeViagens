@@ -25,10 +25,13 @@ class RetrofitFactory {
     fun getCategoriaService(): CategoriaService {
         return retrofitFactory.create(CategoriaService::class.java)
     }
-
-    fun getLocalizacaoService(): LocalizacaoService {
-        return retrofitFactory.create(LocalizacaoService::class.java)
+    fun getNominatimService(): CategoriaService {
+        return retrofitFactory.create(CategoriaService::class.java)
     }
+
+
+
+
 
 
 

@@ -1,5 +1,5 @@
-package com.example.diariodeviagens.screens
 
+package com.example.diariodeviagens.screens
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -240,6 +240,8 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
                 }
             }
         }
+
+
 
         Spacer(Modifier.height(24.dp))
 
