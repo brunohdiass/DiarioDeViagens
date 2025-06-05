@@ -29,8 +29,4 @@ class RetrofitFactory {
     fun getLocalizacaoService(): LocalizacaoService {
         return retrofitFactory.create(LocalizacaoService::class.java)
     }
-
-
-
-
 }

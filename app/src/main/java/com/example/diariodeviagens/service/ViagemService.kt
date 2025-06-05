@@ -3,6 +3,7 @@ package com.example.diariodeviagens.service
 import com.example.diariodeviagens.model.Viagens
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.POST
 
@@ -12,4 +13,6 @@ interface ViagemService {
     @POST("viagem")
     suspend fun postarViagem(@Body viagem: Viagens): Response<Void>
 
+    @GET("viagem")
+    suspend fun listarViagem(): List<Viagens>
 }
