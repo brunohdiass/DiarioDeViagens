@@ -28,6 +28,7 @@ class RetrofitFactory {
     fun getNominatimService(): CategoriaService {
         return retrofitFactory.create(CategoriaService::class.java)
     }
+<<<<<<< HEAD
 
 
 
@@ -36,4 +37,6 @@ class RetrofitFactory {
 
 
 
+=======
+>>>>>>> 35803435c3ee6db3a1568360d707f416aa97655f
 }
