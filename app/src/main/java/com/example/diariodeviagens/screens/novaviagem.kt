@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.example.diariodeviagens.model.Categoria
 import com.example.diariodeviagens.model.Viagens
 import com.example.diariodeviagens.service.RetrofitFactory
 import kotlinx.coroutines.launch
@@ -36,15 +35,50 @@ import java.io.InputStream
 fun TelaNovaPublicacao(navController: NavHostController?) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val retrofit = RetrofitFactory()
 
     val titulo = remember { mutableStateOf("") }
     val descricao = remember { mutableStateOf("") }
     val dataInicio = remember { mutableStateOf("") }
     val dataFim = remember { mutableStateOf("") }
+    val expanded = remember { mutableStateOf(false) }
+    val tipoSelecionado = remember { mutableStateOf("Selecione uma categoria") }
+    val categorias = remember { mutableStateListOf<Pair<Int, String>>() }
+    val categoriaSelecionadaId = remember { mutableStateOf<Int?>(null) }
+
+    val nomeLocal = remember { mutableStateOf("") }
+    val latitude = remember { mutableStateOf("") }
+    val longitude = remember { mutableStateOf("") }
+
 
     var imagemUri by remember { mutableStateOf<Uri?>(null) }
     var imagemBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
 
+    LaunchedEffect(Unit) {
+        try {
+            val response = retrofit.getCategoriaService().getCategorias()
+
+            if (response.isSuccessful) {
+                response.body()?.let { apiResponse ->
+                    // Verifica se há categorias na resposta
+                    if (apiResponse.status && apiResponse.categorias.isNotEmpty()) {
+                        categorias.clear()
+                        apiResponse.categorias.forEach { cat ->
+                            categorias.add(cat.id to cat.nome)
+                        }
+                        println("✅ Categorias carregadas: ${categorias.size} itens")
+                    } else {
+                        println("⚠️ API retornou status falso ou lista vazia")
+                    }
+                }
+            } else {
+                println("❌ Erro na resposta: ${response.errorBody()?.string()}")
+            }
+        } catch (e: Exception) {
+            println("💥 Erro ao carregar categorias: ${e.message}")
+            e.printStackTrace()
+        }
+    }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         imagemUri = uri
         uri?.let {
@@ -54,29 +88,7 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
     }
 
     // ID fixo do usuário por enquanto
-    val userId = 1
-
-    // Categoria dinâmica da API
-    val retrofit = RetrofitFactory()
-    val categoriaService = retrofit.getCategoriaService()
-
-    var categorias by remember { mutableStateOf(listOf<Categoria>()) }
-    var categoriaSelecionada by remember { mutableStateOf<Categoria?>(null) }
-    val expanded = remember { mutableStateOf(false) }
-    val tipoSelecionado = remember { mutableStateOf("Selecione uma categoria") }
-
-    LaunchedEffect(Unit) {
-        try {
-            val response = categoriaService.listarCategorias()
-            if (response.isSuccessful) {
-                categorias = response.body() ?: emptyList()
-            } else {
-                println("❌ Erro ao carregar categorias: ${response.code()}")
-            }
-        } catch (e: Exception) {
-            println("❌ Erro de rede: ${e.message}")
-        }
-    }
+    val userId = 3
 
     Column(
         modifier = Modifier
@@ -177,32 +189,55 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
 
         Spacer(Modifier.height(12.dp))
 
-        // Categoria (Dropdown)
+        // Dropdown de Categorias
         Text("Categoria", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-        Button(
-            onClick = { expanded.value = true },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA86523)),
-            shape = RoundedCornerShape(6.dp),
-            modifier = Modifier.fillMaxWidth()
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentSize(Alignment.TopStart)
         ) {
-            Text(tipoSelecionado.value, color = Color.White)
-            Spacer(Modifier.width(8.dp))
-            Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.White)
-        }
-
-        DropdownMenu(
-            expanded = expanded.value,
-            onDismissRequest = { expanded.value = false }
-        ) {
-            categorias.forEach { categoria ->
-                DropdownMenuItem(
-                    text = { Text(categoria.nome_categoria) },
-                    onClick = {
-                        tipoSelecionado.value = categoria.nome_categoria
-                        categoriaSelecionada = categoria
-                        expanded.value = false
-                    }
+            OutlinedButton(
+                onClick = { expanded.value = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFF2F2F2), RoundedCornerShape(6.dp)),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+            ) {
+                Text(
+                    text = tipoSelecionado.value,
+                    modifier = Modifier.weight(1f),
+                    style = TextStyle(fontSize = 14.sp)
                 )
+                Icon(
+                    Icons.Default.ArrowDropDown,
+                    contentDescription = "Abrir menu de categorias"
+                )
+            }
+
+            DropdownMenu(
+                expanded = expanded.value,
+                onDismissRequest = { expanded.value = false }
+            ) {
+                when {
+                    categorias.isEmpty() -> {
+                        DropdownMenuItem(
+                            text = { Text("Nenhuma categoria disponível") },
+                            onClick = {}
+                        )
+                    }
+                    else -> {
+                        categorias.forEach { (id, nome) ->
+                            DropdownMenuItem(
+                                text = { Text(nome) },
+                                onClick = {
+                                    tipoSelecionado.value = nome
+                                    categoriaSelecionadaId.value = id
+                                    expanded.value = false
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
 
@@ -218,8 +253,7 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
                     data_fim = dataFim.value,
                     visibilidade = "publica",
                     id_usuario = userId,
-                    locais = listOf(),
-                    categorias = categoriaSelecionada?.let { listOf(it.id) } ?: listOf()
+                    categorias = listOfNotNull(categoriaSelecionadaId.value)
                 )
 
                 scope.launch {
@@ -227,7 +261,7 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
                         val response = retrofit.getViagemService().postarViagem(viagemRequest)
                         if (response.isSuccessful) {
                             println("✅ Viagem postada com sucesso!")
-                            navController?.navigate("telaListaViagens") // ajuste para sua rota real
+                            navController?.navigate("TelaMyViagens")
                         } else {
                             println("❌ Erro na resposta: ${response.code()}")
                         }

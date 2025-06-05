@@ -5,8 +5,9 @@ data class Viagens(
     val descricao: String,
     val data_inicio: String,
     val data_fim: String,
-    val visibilidade: String = "publica",
+    val visibilidade: String,
     val id_usuario: Int,
-    val locais: List<Int>,
-    val categorias: List<Int>
+    val categorias: List<Int>? = null,   // lista de IDs das categorias
+
 )
+

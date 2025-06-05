@@ -10,7 +10,7 @@ class RetrofitFactory {
     // Criar Retrofit uma vez só, quando a classe for instanciada
     private val retrofitFactory: Retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl("http://10.107.144.26:8080/v1/diario-viagem/")
+            .baseUrl("http://10.107.134.22:8080/v1/diario-viagem/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
@@ -22,9 +22,15 @@ class RetrofitFactory {
     fun getViagemService(): ViagemService {
         return retrofitFactory.create(ViagemService::class.java)
     }
-
     fun getCategoriaService(): CategoriaService {
         return retrofitFactory.create(CategoriaService::class.java)
     }
+
+    fun getLocalizacaoService(): LocalizacaoService {
+        return retrofitFactory.create(LocalizacaoService::class.java)
+    }
+
+
+
 
 }
