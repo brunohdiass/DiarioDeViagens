@@ -8,6 +8,7 @@ data class Viagens(
     val visibilidade: String,
     val id_usuario: Int,
     val categorias: List<Int>? = null,   // lista de IDs das categorias
+    val nome: String
 
 )
 

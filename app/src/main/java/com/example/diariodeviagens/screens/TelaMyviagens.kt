@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.diariodeviagens.R
-import com.example.diariodeviagens.screens.components.CardViagem
 import java.util.UUID // Para gerar IDs únicos
 
 data class ViagemCardInfo(
@@ -207,15 +206,7 @@ fun TelaMyViagens(navController1: NavHostController?) {
                 Row(verticalAlignment = Alignment.Top) {
                     Icon(Icons.Filled.Place, "Localização", modifier = Modifier.size(28.dp).padding(top = 4.dp), tint = Color(0xFFA86523))
                     Spacer(modifier = Modifier.width(12.dp))
-                    CardViagem(
-                        imageUrl = viagemInfo,
-                        titulo = viagemInfo.titulo,
-                        descricao = viagemInfo.descricao,
-                        localPrincipal = viagemInfo.localPrincipal,
-                        categoriaPrincipal = viagemInfo.categoriaPrincipal,
-                        dataInicio = viagemInfo.dataInicio,
-                        nomeUsuario = viagemInfo.nomeUsuario
-                    )
+
                 }
             }
         }

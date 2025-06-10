@@ -8,6 +8,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -26,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.diariodeviagens.model.NominatimResult
 import com.example.diariodeviagens.model.Viagens
 import com.example.diariodeviagens.service.RetrofitFactory
 import kotlinx.coroutines.launch
@@ -46,9 +49,13 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
     val categorias = remember { mutableStateListOf<Pair<Int, String>>() }
     val categoriaSelecionadaId = remember { mutableStateOf<Int?>(null) }
 
-    val nomeLocal = remember { mutableStateOf("") }
+    val localQuery = remember { mutableStateOf("") }
+    val resultadosLocal = remember { mutableStateListOf<NominatimResult>() }
+    val nome = remember { mutableStateOf("") }
     val latitude = remember { mutableStateOf("") }
     val longitude = remember { mutableStateOf("") }
+
+
 
 
     var imagemUri by remember { mutableStateOf<Uri?>(null) }
@@ -109,6 +116,57 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
         }
 
         Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+        Text("Localização", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+
+        BasicTextField(
+            value = localQuery.value,
+            onValueChange = {
+                localQuery.value = it
+                scope.launch {
+                    try {
+                        val results = RetrofitFactory.NominatimApi.create().searchLocation(it)
+                        resultadosLocal.clear()
+                        resultadosLocal.addAll(results)
+                    } catch (e: Exception) {
+                        println("Erro ao buscar localização: ${e.message}")
+                    }
+                }
+            },
+            textStyle = TextStyle(fontSize = 14.sp, color = Color.Black),
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF2F2F2), RoundedCornerShape(6.dp))
+                .padding(12.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+// Lista de sugestões de local
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF8F8F8), RoundedCornerShape(6.dp))
+                .padding(4.dp)
+        ) {
+            items(resultadosLocal) { locais ->
+                Text(
+                    text = locais.display_name,
+                    fontSize = 13.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            nome.value = locais.display_name
+                            latitude.value = locais.lat
+                            longitude.value = locais.lon
+                            localQuery.value = locais.display_name
+                            resultadosLocal.clear()
+                        }
+                        .padding(8.dp)
+                )
+            }
+        }
+
 
         // Imagem
         Box(
@@ -255,7 +313,8 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
                     data_fim = dataFim.value,
                     visibilidade = "publica",
                     id_usuario = userId,
-                    categorias = listOfNotNull(categoriaSelecionadaId.value)
+                    categorias = listOfNotNull(categoriaSelecionadaId.value),
+                    nome = nome.value
                 )
 
                 scope.launch {
