@@ -7,8 +7,8 @@ data class Viagens(
     val data_fim: String,
     val visibilidade: String,
     val id_usuario: Int,
-    val categorias: List<Int>? = null,   // lista de IDs das categorias
-    val nome: String
-
+    val categorias: List<Int>? = null,
+    val locais: List<Int>? = null, // <- envia só os IDs
+    val midias: List<Midia>? = null
 )
 

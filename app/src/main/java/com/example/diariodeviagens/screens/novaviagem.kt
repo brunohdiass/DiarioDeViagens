@@ -1,5 +1,5 @@
-
 package com.example.diariodeviagens.screens
+
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -30,15 +30,20 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.diariodeviagens.model.NominatimResult
 import com.example.diariodeviagens.model.Viagens
+import com.example.diariodeviagens.model.LocalPayload // IMPORTANTE: Importe LocalPayload
+import com.example.diariodeviagens.model.Midia
 import com.example.diariodeviagens.service.RetrofitFactory
+import com.example.diariodeviagens.service.uploadFileToAzure
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileInputStream
 import java.io.InputStream
 
 @Composable
 fun TelaNovaPublicacao(navController: NavHostController?) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val retrofit = RetrofitFactory()
+    val retrofit = remember { RetrofitFactory() } // Use remember para o RetrofitFactory
 
     val titulo = remember { mutableStateOf("") }
     val descricao = remember { mutableStateOf("") }
@@ -51,15 +56,19 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
 
     val localQuery = remember { mutableStateOf("") }
     val resultadosLocal = remember { mutableStateListOf<NominatimResult>() }
-    val nome = remember { mutableStateOf("") }
-    val latitude = remember { mutableStateOf("") }
-    val longitude = remember { mutableStateOf("") }
+    // As variáveis 'local', 'latitude', 'longitude' individuais não serão mais usadas para o payload
+    // mas podem ser úteis para exibir o texto na UI se você quiser.
+    val localParaExibicao = remember { mutableStateOf("") } // Para exibir o nome do local selecionado na UI
 
-
+    // ESTADO CRÍTICO: Armazena o objeto NominatimResult completo selecionado
+    val selectedNominatimResult = remember { mutableStateOf<NominatimResult?>(null) }
 
 
     var imagemUri by remember { mutableStateOf<Uri?>(null) }
     var imagemBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+    // TODO: Adicione uma variável para a lista de mídias (se estiver usando imagens/vídeos múltiplos)
+    // val medias = remember { mutableStateListOf<MidiaPayload>() }
 
     LaunchedEffect(Unit) {
         try {
@@ -67,7 +76,6 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
 
             if (response.isSuccessful) {
                 response.body()?.let { apiResponse ->
-                    // Verifica se há categorias na resposta
                     if (apiResponse.status && apiResponse.categorias.isNotEmpty()) {
                         categorias.clear()
                         apiResponse.categorias.forEach { cat ->
@@ -75,26 +83,30 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
                         }
                         println("✅ Categorias carregadas: ${categorias.size} itens")
                     } else {
-                        println("⚠️ API retornou status falso ou lista vazia")
+                        println("⚠️ API de categorias retornou status falso ou lista vazia")
                     }
                 }
             } else {
-                println("❌ Erro na resposta: ${response.errorBody()?.string()}")
+                println("❌ Erro na resposta da API de categorias: ${response.code()} - ${response.errorBody()?.string()}")
             }
         } catch (e: Exception) {
             println("💥 Erro ao carregar categorias: ${e.message}")
             e.printStackTrace()
         }
     }
+
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         imagemUri = uri
         uri?.let {
             val inputStream: InputStream? = context.contentResolver.openInputStream(it)
             imagemBitmap = BitmapFactory.decodeStream(inputStream)
+            // TODO: Se você estiver lidando com múltiplos uploads e URLs para o backend,
+            // aqui você adicionaria a lógica para fazer o upload da imagem e
+            // adicionar a URL e o tipo à sua lista de 'medias'.
         }
     }
 
-    // ID fixo do usuário por enquanto
+    // ID fixo do usuário por enquanto (MUITO IMPORTANTE: Substitua por um ID dinâmico do usuário logado)
     val userId = 3
 
     Column(
@@ -119,17 +131,23 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
 
         Text("Localização", fontWeight = FontWeight.Bold, fontSize = 14.sp)
 
+        // Campo de texto para busca de local
         BasicTextField(
             value = localQuery.value,
             onValueChange = {
                 localQuery.value = it
                 scope.launch {
-                    try {
-                        val results = RetrofitFactory.NominatimApi.create().searchLocation(it)
-                        resultadosLocal.clear()
-                        resultadosLocal.addAll(results)
-                    } catch (e: Exception) {
-                        println("Erro ao buscar localização: ${e.message}")
+                    if (it.isNotBlank() && it.length > 2) { // Evita buscas muito curtas
+                        try {
+                            val results = RetrofitFactory.NominatimApi.create().searchLocation(it)
+                            resultadosLocal.clear()
+                            resultadosLocal.addAll(results)
+                        } catch (e: Exception) {
+                            println("Erro ao buscar localização: ${e.message}")
+                            // TODO: Exibir uma mensagem de erro para o usuário
+                        }
+                    } else {
+                        resultadosLocal.clear() // Limpa resultados se a query for muito curta
                     }
                 }
             },
@@ -137,30 +155,36 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color(0xFFF2F2F2), RoundedCornerShape(6.dp))
-                .padding(12.dp)
+                .padding(12.dp),
+            decorationBox = { innerTextField ->
+                if (localQuery.value.isEmpty()) {
+                    Text("Pesquisar local...", style = TextStyle(fontSize = 14.sp, color = Color.Gray))
+                }
+                innerTextField()
+            }
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-// Lista de sugestões de local
+        // Lista de sugestões de local
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color(0xFFF8F8F8), RoundedCornerShape(6.dp))
                 .padding(4.dp)
+                .heightIn(max = 200.dp) // Limita a altura para evitar que ocupe a tela inteira
         ) {
-            items(resultadosLocal) { locais ->
+            items(resultadosLocal) { locItem -> // 'locItem' é um único NominatimResult
                 Text(
-                    text = locais.display_name,
+                    text = locItem.display_name,
                     fontSize = 13.sp,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            nome.value = locais.display_name
-                            latitude.value = locais.lat
-                            longitude.value = locais.lon
-                            localQuery.value = locais.display_name
-                            resultadosLocal.clear()
+                            localParaExibicao.value = locItem.display_name // Atualiza o texto exibido
+                            localQuery.value = locItem.display_name // Atualiza o campo de busca para o nome completo
+                            resultadosLocal.clear() // Limpa as sugestões
+                            selectedNominatimResult.value = locItem // **Armazena o objeto NominatimResult completo!**
                         }
                         .padding(8.dp)
                 )
@@ -180,7 +204,7 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
             if (imagemBitmap != null) {
                 Image(
                     bitmap = imagemBitmap!!.asImageBitmap(),
-                    contentDescription = null,
+                    contentDescription = "Imagem selecionada",
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
@@ -299,35 +323,129 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
             }
         }
 
-
-
         Spacer(Modifier.height(24.dp))
 
-        // Botão compartilhar
         Button(
             onClick = {
-                val viagemRequest = Viagens(
-                    titulo = titulo.value,
-                    descricao = descricao.value,
-                    data_inicio = dataInicio.value,
-                    data_fim = dataFim.value,
-                    visibilidade = "publica",
-                    id_usuario = userId,
-                    categorias = listOfNotNull(categoriaSelecionadaId.value),
-                    nome = nome.value
-                )
+                // Validações básicas do formulário
+                if (titulo.value.isBlank()) {
+                    println("❌ Validação: O título não pode estar vazio!")
+                    return@Button
+                }
+                if (descricao.value.isBlank()) {
+                    println("❌ Validação: A descrição não pode estar vazia!")
+                    return@Button
+                }
+                if (dataInicio.value.isBlank() || dataFim.value.isBlank()) {
+                    println("❌ Validação: As datas de início e fim são obrigatórias!")
+                    return@Button
+                }
+                if (categoriaSelecionadaId.value == null) {
+                    println("❌ Validação: Selecione uma categoria!")
+                    return@Button
+                }
+                if (imagemUri == null) {
+                    println("❌ Validação: Selecione uma imagem para a viagem!")
+                    return@Button
+                }
 
                 scope.launch {
                     try {
-                        val response = retrofit.getViagemService().postarViagem(viagemRequest)
-                        if (response.isSuccessful) {
-                            println("✅ Viagem postada com sucesso!")
-                            navController?.navigate("TelaMyViagens")
-                        } else {
-                            println("❌ Erro na resposta: ${response.code()}")
+                        // Criar local no backend e pegar o ID retornado
+                        val localId: Int? = selectedNominatimResult.value?.let { nominatimResult ->
+                            val localPayload = LocalPayload(
+                                nome = nominatimResult.display_name,
+                                latitude = nominatimResult.lat.toDouble(),
+                                longitude = nominatimResult.lon.toDouble()
+                            )
+
+                            val responseLocal = retrofit.getLocalService().criarLocal(localPayload)
+                            val idLocal = responseLocal.local.id
+                            idLocal
                         }
+
+                        val locaisParaBackend = localId?.let { listOf(it) } ?: emptyList()
+
+                        // --- INÍCIO DO UPLOAD DA IMAGEM ---
+
+                        // Abrir arquivo a partir da URI
+                        val parcelFileDescriptor = context.contentResolver.openFileDescriptor(imagemUri!!, "r")
+                        if (parcelFileDescriptor == null) {
+                            println("❌ Não foi possível abrir o arquivo da imagem.")
+                            return@launch
+                        }
+                        val fileDescriptor = parcelFileDescriptor.fileDescriptor
+
+                        val inputStream = FileInputStream(fileDescriptor)
+                        val tempFile = File(context.cacheDir, "upload_temp.jpg")
+                        tempFile.outputStream().use { outputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+
+                        val azureImageUrl = uploadFileToAzure(
+                            file = tempFile,
+                            storageAccount = "diariodeviagem",
+                            containerName = "fotosvideos",
+                            sasToken = "sp=racwl&st=2025-06-05T12:07:14Z&se=2025-06-12T20:07:14Z&sv=2024-11-04&sr=c&sig=JoV%2BGNNaowZyXQMpkv397WpEjthe0zsW914ABZ8GEsI%3D"
+                        )
+
+                        if (azureImageUrl == null) {
+                            println("❌ Falha no upload da imagem para o Azure.")
+                            return@launch
+                        }
+
+                        // --- FIM DO UPLOAD ---
+
+                        // Construir objeto da viagem para envio, incluindo midia
+                        val viagemRequest = Viagens(
+                            titulo = titulo.value,
+                            descricao = descricao.value,
+                            data_inicio = dataInicio.value,
+                            data_fim = dataFim.value,
+                            visibilidade = "publica",
+                            id_usuario = userId,
+                            categorias = listOfNotNull(categoriaSelecionadaId.value),
+                            locais = locaisParaBackend,
+                            midias = listOf(
+                                Midia(
+                                    url = azureImageUrl,
+                                    tipo = "foto"
+                                )
+                            )
+                        )
+
+                        println("JSON da Requisição: $viagemRequest")
+
+                        // Enviar viagem para o backend
+                        val responseViagem = retrofit.getViagemService().postarViagem(viagemRequest)
+
+                        if (responseViagem.isSuccessful) {
+                            println("✅ Viagem postada com sucesso!")
+                            // Limpar campos após sucesso
+                            titulo.value = ""
+                            descricao.value = ""
+                            dataInicio.value = ""
+                            dataFim.value = ""
+                            tipoSelecionado.value = "Selecione uma categoria"
+                            categoriaSelecionadaId.value = null
+                            localQuery.value = ""
+                            resultadosLocal.clear()
+                            localParaExibicao.value = ""
+                            selectedNominatimResult.value = null
+                            imagemUri = null
+                            imagemBitmap = null
+
+                            navController?.navigate("TelaMyViagens") {
+                                popUpTo("TelaMyViagens") { inclusive = true }
+                            }
+                        } else {
+                            val errorBody = responseViagem.errorBody()?.string()
+                            println("❌ Erro na resposta da API: ${responseViagem.code()} - $errorBody")
+                        }
+
                     } catch (e: Exception) {
-                        println("❌ Falha ao postar viagem: ${e.message}")
+                        println("❌ Falha na requisição: ${e.message}")
+                        e.printStackTrace()
                     }
                 }
             },
@@ -339,6 +457,7 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
         ) {
             Text("Compartilhar", color = Color.White, fontWeight = FontWeight.SemiBold)
         }
+
     }
 }
 
