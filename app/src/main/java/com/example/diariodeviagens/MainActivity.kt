@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.abordoteste.screen.TelaMyViagens
 import com.example.diariodeviagens.screens.CadastroScreen
 import com.example.diariodeviagens.screens.LoginScreen
+import com.example.diariodeviagens.screens.TelaHome
 import com.example.diariodeviagens.screens.TelaNovaPublicacao
 import com.example.diariodeviagens.ui.theme.DiarioDeViagensTheme
 
@@ -42,6 +43,10 @@ class MainActivity : ComponentActivity() {
 
                     composable("novaviagem") {
                         TelaNovaPublicacao(navController)
+                    }
+
+                    composable("TelaHome") {
+                        TelaHome(navController)
                     }
                 }
             }
