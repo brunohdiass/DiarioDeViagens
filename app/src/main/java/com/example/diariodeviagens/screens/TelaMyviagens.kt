@@ -24,15 +24,14 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.diariodeviagens.R
-import com.example.diariodeviagens.model.Viagens // Importe o data class Viagens
-import com.example.diariodeviagens.screens.components.CardViagem // Importe o CardViagem
+import com.example.diariodeviagens.model.Viagens
+import com.example.diariodeviagens.screens.components.CardViagem
 import com.example.diariodeviagens.service.RetrofitFactory
-import kotlinx.coroutines.launch // Para usar coroutines
-
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TelaMyViagens(navController1: NavHostController?) {
+fun TelaMyViagens(navController: NavHostController?) {
     var searchText by remember { mutableStateOf("") }
     var isHintVisible by remember { mutableStateOf(searchText.isEmpty()) }
 
@@ -49,33 +48,30 @@ fun TelaMyViagens(navController1: NavHostController?) {
         coroutineScope.launch {
             try {
                 isLoading = true
-                errorMessage = null // Limpa erros anteriores
+                errorMessage = null
                 val service = RetrofitFactory().getViagemService()
-                val apiResponse = service.listarViagem() // <--- Recebe UM ViagensResponse
+                val apiResponse = service.listarViagem()
 
-                if (apiResponse.status) { // Verifica o status dentro do ViagensResponse
-                    viagensApi = apiResponse.viagem ?: emptyList() // <--- Acessa a lista 'viagem'
+                if (apiResponse.status) {
+                    viagensApi = apiResponse.viagem ?: emptyList()
                 } else {
                     viagensApi = emptyList()
                     errorMessage = "Erro na API: ${apiResponse.status_code} - ${apiResponse.status}"
                 }
             } catch (e: Exception) {
                 errorMessage = "Erro ao carregar viagens: ${e.message}"
-                Log.e("erro:", "Erro ao carregar viagens: ${e.message}", e) // Use a sobrecarga com Throwable para stack trace completo
+                Log.e("erro:", "Erro ao carregar viagens: ${e.message}", e)
             } finally {
                 isLoading = false
             }
         }
     }
 
-
     val topBarBaseHeight = 200.dp
     val searchBarOffsetFromBase = 10.dp
     val searchBarHeight = 48.dp
     val spaceAfterSearchBar = 16.dp
-
     val totalTopAreaHeight = topBarBaseHeight + searchBarOffsetFromBase + searchBarHeight + spaceAfterSearchBar
-
 
     Scaffold(
         topBar = {
@@ -111,9 +107,13 @@ fun TelaMyViagens(navController1: NavHostController?) {
                         }
                     }
                     Text(
-                        text = "Olá, Usuário! Pronto para registrar sua próxima aventura?",
-                        fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White,
-                        modifier = Modifier.align(Alignment.TopStart).padding(start = 16.dp, top = 80.dp, end = 16.dp)
+                        text = "Olá, Lara! Pronto para registrar sua próxima aventura?",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color.White,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(start = 16.dp, top = 80.dp, end = 16.dp)
                     )
                 }
 
@@ -130,7 +130,10 @@ fun TelaMyViagens(navController1: NavHostController?) {
                 ) {
                     BasicTextField(
                         value = searchText,
-                        onValueChange = { searchText = it; isHintVisible = it.isEmpty() },
+                        onValueChange = {
+                            searchText = it
+                            isHintVisible = it.isEmpty()
+                        },
                         singleLine = true,
                         textStyle = TextStyle(fontSize = 16.sp, color = Color.Black),
                         modifier = Modifier.fillMaxWidth()
@@ -152,29 +155,23 @@ fun TelaMyViagens(navController1: NavHostController?) {
                     horizontalArrangement = Arrangement.SpaceAround,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { /* TODO: Ação Home */ }) {
+                    IconButton(onClick = { navController?.navigate("home") }) {
                         Icon(Icons.Filled.Home, "Home", modifier = Modifier.size(28.dp))
                     }
-                    IconButton(onClick = { /* TODO: Ação Explorar */ }) {
-                        Icon(Icons.Filled.Place, "Explorar", modifier = Modifier.size(28.dp))
+                    IconButton(onClick = { navController?.navigate("explorar") }) {
+                        Icon(Icons.Filled.AirplanemodeActive, "Explorar", modifier = Modifier.size(28.dp))
                     }
-
-                    // Botão de adicionar Viagem - Agora faria uma POST request (se fosse o caso)
-                    // Para este exemplo, não vamos integrar o POST aqui para manter o foco no GET e no LazyColumn
-                    IconButton(
-                        onClick = {
-                            // TODO: Implementar a lógica para adicionar uma nova viagem via POST para a API
-                            // Isso envolveria um novo Composable para o formulário de criação de viagem
-                            // e uma chamada a `RetrofitFactory().getViagemService().postarViagem()`
-                        }
-                    ) {
-                        Icon(Icons.Filled.AddCircle, "Adicionar Viagem", modifier = Modifier.size(34.dp))
+                    IconButton(onClick = { navController?.navigate("novaviagem") }) {
+                        Icon(
+                            Icons.Filled.AddCircle,
+                            "Adicionar Viagem",
+                            modifier = Modifier.size(34.dp)
+                        )
                     }
-
-                    IconButton(onClick = { /* TODO: Ação Viagens Salvas */ }) {
+                    IconButton(onClick = { navController?.navigate("viagensSalvas") }) {
                         Icon(Icons.Filled.Star, "Viagens Salvas", modifier = Modifier.size(28.dp))
                     }
-                    IconButton(onClick = { /* TODO: Ação Configurações/Perfil */ }) {
+                    IconButton(onClick = { navController?.navigate("perfil") }) {
                         Icon(Icons.Filled.AccountCircle, "Perfil", modifier = Modifier.size(28.dp))
                     }
                 }
@@ -183,7 +180,6 @@ fun TelaMyViagens(navController1: NavHostController?) {
         containerColor = Color(0xFFF2F0F0)
     ) { innerPadding ->
         Column(
-            // Aplica o innerPadding a todo o Column
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
@@ -192,39 +188,45 @@ fun TelaMyViagens(navController1: NavHostController?) {
                 text = "MINHAS VIAGENS",
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp,
-                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
+                color = Color(0xFFA86523), // Brown color from your palette
+                modifier = Modifier
+                    .padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
             )
 
-            // Indicadores de estado da API
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = 32.dp)
-                )
-            } else if (errorMessage != null) {
-                Text(
-                    text = errorMessage!!,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = 32.dp)
-                )
-            } else if (viagensApi.isEmpty()) {
-                Text(
-                    text = "Nenhuma viagem encontrada. Comece a planejar sua próxima aventura!",
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = 32.dp)
-                )
-            } else {
-                // LazyColumn para exibir as viagens da API
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(items = viagensApi, key = { viagem -> viagem.id }) { viagem -> // Usando o ID da viagem como chave
-                        CardViagem(viagem = viagem)
+            when {
+                isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(top = 32.dp)
+                    )
+                }
+                errorMessage != null -> {
+                    Text(
+                        text = errorMessage!!,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(top = 32.dp)
+                    )
+                }
+                viagensApi.isEmpty() -> {
+                    Text(
+                        text = "Nenhuma viagem encontrada. Comece a planejar sua próxima aventura!",
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(top = 32.dp)
+                    )
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        items(items = viagensApi, key = { viagem -> viagem.id }) { viagem ->
+                            CardViagem(viagem = viagem)
+                        }
                     }
                 }
             }
@@ -232,9 +234,8 @@ fun TelaMyViagens(navController1: NavHostController?) {
     }
 }
 
-
 @Preview(showSystemUi = true)
 @Composable
 fun PreviewTelaMyViagens() {
-    TelaMyViagens(navController1 = rememberNavController())
+    TelaMyViagens(navController = rememberNavController())
 }

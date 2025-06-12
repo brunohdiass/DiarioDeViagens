@@ -35,14 +35,16 @@ fun CardViagem(
             .fillMaxWidth()
             .padding(8.dp),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White // This sets the card background to white
+        )
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-
-            // Imagem com etiqueta de local
+            // Rest of your existing card content remains the same...
             Box {
                 AsyncImage(
-                    model = viagem.midias?.firstOrNull()?.url ?: R.drawable.ilhabela, // Acessa a URL da primeira mídia, ou usa um placeholder
+                    model = viagem.midias?.firstOrNull()?.url ?: R.drawable.ilhabela,
                     contentDescription = "Imagem da viagem: ${viagem.titulo}",
                     modifier = Modifier
                         .fillMaxWidth()
@@ -53,11 +55,10 @@ fun CardViagem(
                 Box(
                     modifier = Modifier
                         .padding(12.dp)
-                        .background(Color(0xAAFFFFFF), shape = RoundedCornerShape(50))
+                        .background(Color(0xCEFFFFFF), shape = RoundedCornerShape(50))
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                         .align(Alignment.TopStart)
                 ) {
-                    // Acessa o nome do local da primeira localização na lista
                     Text(
                         text = viagem.locais?.firstOrNull()?.nome ?: "Local Desconhecido",
                         fontSize = 12.sp,
@@ -66,7 +67,6 @@ fun CardViagem(
                 }
             }
 
-            // Título e descrição
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text(
                     text = viagem.titulo,
@@ -83,7 +83,6 @@ fun CardViagem(
                 )
             }
 
-            // Rodapé com avatar, nome, data, categoria e ícones
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -91,7 +90,6 @@ fun CardViagem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Avatar e nome
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
@@ -100,22 +98,19 @@ fun CardViagem(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
-                        // Acessa o nome do primeiro usuário na lista
                         Text(
                             text = viagem.usuario?.firstOrNull()?.nome ?: "Usuário Desconhecido",
                             fontSize = 12.sp,
                             color = Color.Black
                         )
-                        // Acessa o nome da primeira categoria na lista
                         Text(
-                            text = "${viagem.categorias?.firstOrNull()?.nome_categoria ?: "Categoria"} • ${viagem.data_inicio.split("T").first()}", // Pega só a data antes do 'T'
+                            text = "${viagem.categorias?.firstOrNull()?.nome_categoria ?: "Categoria"} • ${viagem.data_inicio.split("T").first()}",
                             fontSize = 10.sp,
                             color = Color.Gray
                         )
                     }
                 }
 
-                // Ícones
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.FavoriteBorder,
