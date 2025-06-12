@@ -1,5 +1,6 @@
 package com.example.abordoteste.screen
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -11,8 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,18 +24,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.diariodeviagens.R
-import java.util.UUID // Para gerar IDs únicos
+import com.example.diariodeviagens.model.Viagens // Importe o data class Viagens
+import com.example.diariodeviagens.screens.components.CardViagem // Importe o CardViagem
+import com.example.diariodeviagens.service.RetrofitFactory
+import kotlinx.coroutines.launch // Para usar coroutines
 
-data class ViagemCardInfo(
-    val id: String, // ID único para a chave do LazyColumn
-    val imagemResId: Int,
-    val titulo: String,
-    val descricao: String,
-    val localPrincipal: String,
-    val categoriaPrincipal: String,
-    val dataInicio: String,
-    val nomeUsuario: String
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,29 +36,44 @@ fun TelaMyViagens(navController1: NavHostController?) {
     var searchText by remember { mutableStateOf("") }
     var isHintVisible by remember { mutableStateOf(searchText.isEmpty()) }
 
-    // 1. Tornar a lista de viagens um estado mutável
-    val listaDeViagens = remember {
-        mutableStateListOf( // Usar mutableStateListOf para observabilidade
-            ViagemCardInfo(UUID.randomUUID().toString(), R.drawable.logo_app, "Viagem de Negócios 1", "Conferência importante em São Paulo.", "São Paulo, SP", "Negócios", "10/06/2025", "João Cliente"),
-            ViagemCardInfo(UUID.randomUUID().toString(), R.drawable.logo_app, "Viagem de Férias", "Relaxando na praia ensolarada.", "Praia do Forte, BA", "Lazer", "15/07/2025", "Maria Turista"),
-            ViagemCardInfo(UUID.randomUUID().toString(), R.drawable.logo_app, "Aventura na Montanha", "Explorando trilhas e paisagens.", "Serra da Canastra, MG", "Aventura", "20/08/2025", "Carlos Aventureiro"),
-            ViagemCardInfo(UUID.randomUUID().toString(), R.drawable.logo_app, "Exploração Urbana", "Descobrindo os segredos da cidade.", "Curitiba, PR", "Turismo", "10/09/2025", "Ana Viajante")
-        )
+    // Estado para armazenar a lista de viagens da API
+    var viagensApi by remember { mutableStateOf<List<Viagens>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Usar rememberCoroutineScope para lançar coroutines
+    val coroutineScope = rememberCoroutineScope()
+
+    // Efeito colateral para buscar dados da API quando o componente for composto
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+            try {
+                isLoading = true
+                errorMessage = null // Limpa erros anteriores
+                val service = RetrofitFactory().getViagemService()
+                val apiResponse = service.listarViagem() // <--- Recebe UM ViagensResponse
+
+                if (apiResponse.status) { // Verifica o status dentro do ViagensResponse
+                    viagensApi = apiResponse.viagem ?: emptyList() // <--- Acessa a lista 'viagem'
+                } else {
+                    viagensApi = emptyList()
+                    errorMessage = "Erro na API: ${apiResponse.status_code} - ${apiResponse.status}"
+                }
+            } catch (e: Exception) {
+                errorMessage = "Erro ao carregar viagens: ${e.message}"
+                Log.e("erro:", "Erro ao carregar viagens: ${e.message}", e) // Use a sobrecarga com Throwable para stack trace completo
+            } finally {
+                isLoading = false
+            }
+        }
     }
-    var cardCounter by remember { mutableStateOf(listaDeViagens.size + 1) } // Contador para novos cards
+
 
     val topBarBaseHeight = 200.dp
-    val searchBarOffsetFromBase = 10.dp // Quanto a barra de busca "desce" da base marrom
+    val searchBarOffsetFromBase = 10.dp
     val searchBarHeight = 48.dp
     val spaceAfterSearchBar = 16.dp
 
-    // Altura total que o topBar customizado ocupará visualmente ANTES do conteúdo principal
-    // O final da área marrom é topBarBaseHeight.
-    // O topo da busca começa em: topBarBaseHeight + searchBarOffsetFromBase
-    // O fim da busca é em: topBarBaseHeight + searchBarOffsetFromBase + searchBarHeight
-    // O espaço total do topBar é: topBarBaseHeight + searchBarOffsetFromBase + searchBarHeight + spaceAfterSearchBar
-    // No entanto, o Scaffold vai usar a altura do Composable que passarmos.
-    // Vamos calcular a altura do Box que contém a área marrom E a busca flutuante
     val totalTopAreaHeight = topBarBaseHeight + searchBarOffsetFromBase + searchBarHeight + spaceAfterSearchBar
 
 
@@ -75,10 +82,9 @@ fun TelaMyViagens(navController1: NavHostController?) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(totalTopAreaHeight) // Altura total para o topBar
-                    .background(Color(0xFFF2F0F0)) // Fundo para a área de espaçamento
+                    .height(totalTopAreaHeight)
+                    .background(Color(0xFFF2F0F0))
             ) {
-                // Parte marrom do topo
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -111,14 +117,12 @@ fun TelaMyViagens(navController1: NavHostController?) {
                     )
                 }
 
-                // Campo de busca posicionado com offset para "flutuar"
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                         .height(searchBarHeight)
-                        .align(Alignment.TopStart) // Alinhar ao topo do Box do topBar
-                        // O y do offset é a posição final da área marrom + o quanto queremos que a busca desça
+                        .align(Alignment.TopStart)
                         .offset(y = topBarBaseHeight + searchBarOffsetFromBase)
                         .background(Color.White, shape = RoundedCornerShape(24.dp))
                         .padding(horizontal = 16.dp),
@@ -155,22 +159,13 @@ fun TelaMyViagens(navController1: NavHostController?) {
                         Icon(Icons.Filled.Place, "Explorar", modifier = Modifier.size(28.dp))
                     }
 
-                    // 2. Botão para adicionar cards
+                    // Botão de adicionar Viagem - Agora faria uma POST request (se fosse o caso)
+                    // Para este exemplo, não vamos integrar o POST aqui para manter o foco no GET e no LazyColumn
                     IconButton(
                         onClick = {
-                            val novoId = UUID.randomUUID().toString()
-                            val novoCard = ViagemCardInfo(
-                                id = novoId,
-                                imagemResId = R.drawable.logo_app, // Imagem genérica
-                                titulo = "Nova Viagem $cardCounter",
-                                descricao = "Detalhes da nova viagem $cardCounter.",
-                                localPrincipal = "Novo Local $cardCounter",
-                                categoriaPrincipal = "Aventura",
-                                dataInicio = "01/01/2026",
-                                nomeUsuario = "Usuário"
-                            )
-                            listaDeViagens.add(novoCard) // Adiciona ao final da lista
-                            cardCounter++
+                            // TODO: Implementar a lógica para adicionar uma nova viagem via POST para a API
+                            // Isso envolveria um novo Composable para o formulário de criação de viagem
+                            // e uma chamada a `RetrofitFactory().getViagemService().postarViagem()`
                         }
                     ) {
                         Icon(Icons.Filled.AddCircle, "Adicionar Viagem", modifier = Modifier.size(34.dp))
@@ -187,26 +182,50 @@ fun TelaMyViagens(navController1: NavHostController?) {
         },
         containerColor = Color(0xFFF2F0F0)
     ) { innerPadding ->
-        LazyColumn(
+        Column(
+            // Aplica o innerPadding a todo o Column
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(innerPadding)
         ) {
-            item {
-                Text(
-                    text = "MINHAS VIAGENS",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 18.sp,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
-            items(items = listaDeViagens, key = { viagem -> viagem.id }) { viagemInfo ->
-                Row(verticalAlignment = Alignment.Top) {
-                    Icon(Icons.Filled.Place, "Localização", modifier = Modifier.size(28.dp).padding(top = 4.dp), tint = Color(0xFFA86523))
-                    Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "MINHAS VIAGENS",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 18.sp,
+                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
+            )
 
+            // Indicadores de estado da API
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 32.dp)
+                )
+            } else if (errorMessage != null) {
+                Text(
+                    text = errorMessage!!,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 32.dp)
+                )
+            } else if (viagensApi.isEmpty()) {
+                Text(
+                    text = "Nenhuma viagem encontrada. Comece a planejar sua próxima aventura!",
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 32.dp)
+                )
+            } else {
+                // LazyColumn para exibir as viagens da API
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(items = viagensApi, key = { viagem -> viagem.id }) { viagem -> // Usando o ID da viagem como chave
+                        CardViagem(viagem = viagem)
+                    }
                 }
             }
         }

@@ -23,7 +23,7 @@ class RetrofitFactory {
 
     private val retrofitFactory: Retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl("http://10.107.144.24:8080/v1/diario-viagem/")
+            .baseUrl("http://10.107.134.22:8080/v1/diario-viagem/")
             .client(client) // Aqui está o client com o Content-Type
             .addConverterFactory(GsonConverterFactory.create())
             .build()

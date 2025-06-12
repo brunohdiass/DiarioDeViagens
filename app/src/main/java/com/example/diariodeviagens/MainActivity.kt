@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 NavHost(
                     navController = navController,
-                    startDestination = "novaviagem" // ← Aqui está o início correto
+                    startDestination = "TelaMyViagens" // ← Aqui está o início correto
                 ) {
                     composable("LoginScreen") {
                         LoginScreen(navController)

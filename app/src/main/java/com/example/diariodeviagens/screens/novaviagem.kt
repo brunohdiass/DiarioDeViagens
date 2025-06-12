@@ -29,9 +29,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.diariodeviagens.model.NominatimResult
-import com.example.diariodeviagens.model.Viagens
-import com.example.diariodeviagens.model.LocalPayload // IMPORTANTE: Importe LocalPayload
-import com.example.diariodeviagens.model.Midia
+import com.example.diariodeviagens.model.Viagens // Este é para o GET
+import com.example.diariodeviagens.model.ViagensPayload // <--- IMPORTANTE: Novo import para POST
+import com.example.diariodeviagens.model.LocalPayload
+import com.example.diariodeviagens.model.MidiaPayload // <--- IMPORTANTE: Novo import para POST
 import com.example.diariodeviagens.service.RetrofitFactory
 import com.example.diariodeviagens.service.uploadFileToAzure
 import kotlinx.coroutines.launch
@@ -43,7 +44,7 @@ import java.io.InputStream
 fun TelaNovaPublicacao(navController: NavHostController?) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val retrofit = remember { RetrofitFactory() } // Use remember para o RetrofitFactory
+    val retrofit = remember { RetrofitFactory() }
 
     val titulo = remember { mutableStateOf("") }
     val descricao = remember { mutableStateOf("") }
@@ -56,11 +57,8 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
 
     val localQuery = remember { mutableStateOf("") }
     val resultadosLocal = remember { mutableStateListOf<NominatimResult>() }
-    // As variáveis 'local', 'latitude', 'longitude' individuais não serão mais usadas para o payload
-    // mas podem ser úteis para exibir o texto na UI se você quiser.
-    val localParaExibicao = remember { mutableStateOf("") } // Para exibir o nome do local selecionado na UI
+    val localParaExibicao = remember { mutableStateOf("") }
 
-    // ESTADO CRÍTICO: Armazena o objeto NominatimResult completo selecionado
     val selectedNominatimResult = remember { mutableStateOf<NominatimResult?>(null) }
 
 
@@ -100,9 +98,6 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
         uri?.let {
             val inputStream: InputStream? = context.contentResolver.openInputStream(it)
             imagemBitmap = BitmapFactory.decodeStream(inputStream)
-            // TODO: Se você estiver lidando com múltiplos uploads e URLs para o backend,
-            // aqui você adicionaria a lógica para fazer o upload da imagem e
-            // adicionar a URL e o tipo à sua lista de 'medias'.
         }
     }
 
@@ -137,17 +132,16 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
             onValueChange = {
                 localQuery.value = it
                 scope.launch {
-                    if (it.isNotBlank() && it.length > 2) { // Evita buscas muito curtas
+                    if (it.isNotBlank() && it.length > 2) {
                         try {
                             val results = RetrofitFactory.NominatimApi.create().searchLocation(it)
                             resultadosLocal.clear()
                             resultadosLocal.addAll(results)
                         } catch (e: Exception) {
                             println("Erro ao buscar localização: ${e.message}")
-                            // TODO: Exibir uma mensagem de erro para o usuário
                         }
                     } else {
-                        resultadosLocal.clear() // Limpa resultados se a query for muito curta
+                        resultadosLocal.clear()
                     }
                 }
             },
@@ -172,19 +166,19 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
                 .fillMaxWidth()
                 .background(Color(0xFFF8F8F8), RoundedCornerShape(6.dp))
                 .padding(4.dp)
-                .heightIn(max = 200.dp) // Limita a altura para evitar que ocupe a tela inteira
+                .heightIn(max = 200.dp)
         ) {
-            items(resultadosLocal) { locItem -> // 'locItem' é um único NominatimResult
+            items(resultadosLocal) { locItem ->
                 Text(
                     text = locItem.display_name,
                     fontSize = 13.sp,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            localParaExibicao.value = locItem.display_name // Atualiza o texto exibido
-                            localQuery.value = locItem.display_name // Atualiza o campo de busca para o nome completo
-                            resultadosLocal.clear() // Limpa as sugestões
-                            selectedNominatimResult.value = locItem // **Armazena o objeto NominatimResult completo!**
+                            localParaExibicao.value = locItem.display_name
+                            localQuery.value = locItem.display_name
+                            resultadosLocal.clear()
+                            selectedNominatimResult.value = locItem
                         }
                         .padding(8.dp)
                 )
@@ -382,6 +376,9 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
                             inputStream.copyTo(outputStream)
                         }
 
+                        // ATENÇÃO: Verifique a validade do seu SAS Token. Tokens SAS têm prazo de validade.
+                        // O token atual expira em 12/06/2025 20:07:14 -0300 (hora local).
+                        // Se você estiver vendo este erro após essa data/hora, este é o motivo.
                         val azureImageUrl = uploadFileToAzure(
                             file = tempFile,
                             storageAccount = "diariodeviagem",
@@ -396,18 +393,18 @@ fun TelaNovaPublicacao(navController: NavHostController?) {
 
                         // --- FIM DO UPLOAD ---
 
-                        // Construir objeto da viagem para envio, incluindo midia
-                        val viagemRequest = Viagens(
+                        // Construir objeto da viagem para envio, usando ViagensPayload
+                        val viagemRequest = ViagensPayload( // <--- MUDANÇA AQUI: Usando ViagensPayload
                             titulo = titulo.value,
                             descricao = descricao.value,
                             data_inicio = dataInicio.value,
                             data_fim = dataFim.value,
                             visibilidade = "publica",
-                            id_usuario = userId,
+                            id_usuario = userId, // <--- Agora o id_usuario é esperado diretamente
                             categorias = listOfNotNull(categoriaSelecionadaId.value),
                             locais = locaisParaBackend,
                             midias = listOf(
-                                Midia(
+                                MidiaPayload( // <--- MUDANÇA AQUI: Usando MidiaPayload
                                     url = azureImageUrl,
                                     tipo = "foto"
                                 )
